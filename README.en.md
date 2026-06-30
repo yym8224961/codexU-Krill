@@ -1,6 +1,6 @@
 # codexU
 
-codexU is a local macOS desktop widget for OpenAI Codex / ChatGPT Codex usage. It works as a Codex quota tracker and token usage monitor by reading quota windows from the official local `codex app-server`, aggregating local token usage from `~/.codex/state_5.sqlite`, and showing today's Codex work as a compact desktop board.
+codexU is a macOS desktop widget for tracking OpenAI Codex / ChatGPT Codex quota, token usage, and today's task status. It keeps the information you check most on the desktop, so you can quickly see remaining quota, reset times, and daily work progress.
 
 ![codexU desktop widget screenshot](docs/screenshot.png)
 
@@ -8,23 +8,17 @@ codexU is a local macOS desktop widget for OpenAI Codex / ChatGPT Codex usage. I
 
 - Developers who use OpenAI Codex, Codex CLI, or the Codex desktop app every day.
 - ChatGPT Pro / Team users who want a quick view of Codex 5-hour quota, 7-day quota, token usage, and reset times.
-- macOS users who want a desktop Codex usage tracker instead of repeatedly checking a browser or terminal.
-- Developers who prefer local-first tools that do not upload usage data.
-
-## Search Keywords
-
-OpenAI Codex usage tracker, Codex quota tracker, Codex token usage, ChatGPT Codex usage, macOS desktop widget, SwiftUI macOS app, Codex dashboard, Codex rate limit monitor, Codex task board.
+- macOS users who want to check Codex status without repeatedly opening a browser or terminal.
 
 ## Features
 
-- Shows remaining Codex quota for the 5-hour and 7-day windows, including reset times.
-- Summarizes local token usage for today, the last 7 days, and lifetime totals.
-- Displays a 7-day usage trend for quick daily comparison.
+- Shows remaining and used Codex quota for the 5-hour and 7-day windows, including reset times.
+- Summarizes token usage for today, the last 7 days, and lifetime totals with a 7-day trend.
 - Builds a daily task board from local Codex threads and enabled Codex automations.
 - Groups work into active, pending, scheduled, and done columns.
-- Stays on the desktop layer by default, with one-key foreground toggle.
+- Stays on the desktop layer by default, with `Command + U` foreground toggle.
 - Supports Chinese and English UI text. The default language follows the system time zone, and the top `中 | EN` switch can override it.
-- Runs locally. The widget reads local Codex files and local Codex app-server responses; it does not upload usage data to a third-party service.
+- Reads data locally and does not upload usage, threads, or account data to a third-party service.
 
 ## Keyboard Shortcuts
 

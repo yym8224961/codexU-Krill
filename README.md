@@ -2,33 +2,27 @@
 
 [English](README.en.md)
 
-codexU 是一个用于 OpenAI Codex / ChatGPT Codex 的本地 macOS 桌面用量统计小组件，也是一个 Codex quota tracker 和 token usage monitor。它优先通过官方本地 `codex app-server` 读取账户、额度窗口和 usage 信息，再从 `~/.codex/state_5.sqlite` 聚合本机线程 token 用量，并用看板样式展示今天的 Codex 任务状态。
+codexU 是一个 macOS 桌面小组件，用来查看 OpenAI Codex / ChatGPT Codex 的额度窗口、token 用量和今日任务状态。它把常用信息放在桌面上，帮助你快速判断剩余额度、重置时间和当天工作进展。
 
-English summary: codexU is a local macOS desktop widget for OpenAI Codex usage, quota windows, token usage, and today's Codex task board.
+English summary: codexU is a macOS desktop widget for OpenAI Codex quota, token usage, and today's task status.
 
 ![codexU 桌面小组件截图](docs/screenshot.png)
 
 ## 适合谁
 
 - 经常使用 OpenAI Codex、Codex CLI 或 Codex 桌面应用的开发者。
-- 需要快速查看 Codex 5 小时额度、7 天额度、token usage 和 reset time 的 ChatGPT Pro / Team 用户。
-- 想把 Codex usage tracker 放在 macOS 桌面上，而不是频繁打开网页或命令行的人。
-- 关注本地优先、隐私友好、不上传 usage 数据的开发工具用户。
-
-## 关键词
-
-OpenAI Codex 用量统计、Codex usage tracker、Codex quota tracker、Codex token usage、ChatGPT Codex 用量、macOS desktop widget、SwiftUI macOS app、Codex dashboard、Codex rate limit monitor、Codex task board。
+- 需要快速查看 5 小时/7 天额度、token 用量和重置时间的 ChatGPT Pro / Team 用户。
+- 想在桌面查看 Codex 使用状态、减少反复打开浏览器或终端的人。
 
 ## 功能
 
-- 展示 Codex 5 小时和 7 天额度窗口的剩余比例、已用比例和重置时间。
-- 汇总本机今日、近 7 天和累计 token 用量。
-- 显示近 7 天使用趋势，方便快速对比每天的使用量。
-- 从本机 Codex 线程和启用中的 Codex automations 生成今日任务看板。
+- 展示 Codex 5 小时和 7 天额度的剩余比例、已用比例和重置时间。
+- 汇总今日、近 7 天和累计 token 用量，并显示 7 天使用趋势。
+- 从本机 Codex 线程和启用中的 automations 生成今日任务看板。
 - 按进行中、待处理、定时、完成四类组织任务。
-- 默认贴在桌面层，不遮挡普通窗口；需要查看时可以一键唤到前台。
-- 支持中文和英文界面，默认根据系统时区选择语言，也可以通过顶部 `中 | EN` 手动切换。
-- 数据只在本机读取。codexU 不上传本地 usage、线程或账户数据到第三方服务。
+- 默认贴在桌面层，支持 `Command + U` 一键唤到前台。
+- 支持中文和英文界面，可根据系统时区自动选择，也可通过顶部 `中 | EN` 手动切换。
+- 本地读取数据，不上传 usage、线程或账户数据到第三方服务。
 
 ## 快捷键和操作
 
