@@ -1,8 +1,19 @@
 # codexU
 
-codexU is a local macOS desktop widget for Codex usage. It reads account quota from the official local `codex app-server`, aggregates local token usage from `~/.codex/state_5.sqlite`, and shows today's Codex work as a compact desktop board.
+codexU is a local macOS desktop widget for OpenAI Codex / ChatGPT Codex usage. It works as a Codex quota tracker and token usage monitor by reading quota windows from the official local `codex app-server`, aggregating local token usage from `~/.codex/state_5.sqlite`, and showing today's Codex work as a compact desktop board.
 
 ![codexU desktop widget screenshot](docs/screenshot.png)
+
+## Who It Is For
+
+- Developers who use OpenAI Codex, Codex CLI, or the Codex desktop app every day.
+- ChatGPT Pro / Team users who want a quick view of Codex 5-hour quota, 7-day quota, token usage, and reset times.
+- macOS users who want a desktop Codex usage tracker instead of repeatedly checking a browser or terminal.
+- Developers who prefer local-first tools that do not upload usage data.
+
+## Search Keywords
+
+OpenAI Codex usage tracker, Codex quota tracker, Codex token usage, ChatGPT Codex usage, macOS desktop widget, SwiftUI macOS app, Codex dashboard, Codex rate limit monitor, Codex task board.
 
 ## Features
 
@@ -90,6 +101,24 @@ For Developer ID signing and notarization, see [DISTRIBUTION.md](DISTRIBUTION.md
 - Scheduled tasks: enabled automation metadata under `~/.codex/automations/**/automation.toml`.
 
 Current Codex quota APIs expose rolling-window percentages and reset times, not absolute account quota sizes. See [RESEARCH.md](RESEARCH.md) for the data model and fallback behavior.
+
+## FAQ
+
+### Is codexU an official OpenAI product?
+
+No. codexU is an unofficial local macOS utility for reading local Codex app-server responses and local `~/.codex/` data.
+
+### Does codexU upload my Codex threads or usage data?
+
+No. codexU reads Codex quota, local SQLite usage, and automation metadata locally. It does not upload that data to a third-party service.
+
+### Why does codexU show remaining percentage instead of absolute quota?
+
+The current local Codex API exposes rolling-window usage percentages and reset times, not absolute quota sizes. codexU therefore shows remaining percentages for the 5-hour and 7-day windows.
+
+### Does codexU support Intel Macs?
+
+The default release is an Apple Silicon / arm64 DMG. Intel Macs can build from source, or you can package from a compatible toolchain with `TARGET_TRIPLE="x86_64-apple-macos14.0"`.
 
 ## License
 

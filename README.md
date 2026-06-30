@@ -2,9 +2,22 @@
 
 [English](README.en.md)
 
-codexU 是一个本地 macOS 桌面用量小组件。它优先通过官方本地 `codex app-server` 读取账户、额度窗口和 usage 信息，再从 `~/.codex/state_5.sqlite` 聚合本机线程 token 用量，并用看板样式展示今天的 Codex 任务状态。
+codexU 是一个用于 OpenAI Codex / ChatGPT Codex 的本地 macOS 桌面用量统计小组件，也是一个 Codex quota tracker 和 token usage monitor。它优先通过官方本地 `codex app-server` 读取账户、额度窗口和 usage 信息，再从 `~/.codex/state_5.sqlite` 聚合本机线程 token 用量，并用看板样式展示今天的 Codex 任务状态。
+
+English summary: codexU is a local macOS desktop widget for OpenAI Codex usage, quota windows, token usage, and today's Codex task board.
 
 ![codexU 桌面小组件截图](docs/screenshot.png)
+
+## 适合谁
+
+- 经常使用 OpenAI Codex、Codex CLI 或 Codex 桌面应用的开发者。
+- 需要快速查看 Codex 5 小时额度、7 天额度、token usage 和 reset time 的 ChatGPT Pro / Team 用户。
+- 想把 Codex usage tracker 放在 macOS 桌面上，而不是频繁打开网页或命令行的人。
+- 关注本地优先、隐私友好、不上传 usage 数据的开发工具用户。
+
+## 关键词
+
+OpenAI Codex 用量统计、Codex usage tracker、Codex quota tracker、Codex token usage、ChatGPT Codex 用量、macOS desktop widget、SwiftUI macOS app、Codex dashboard、Codex rate limit monitor、Codex task board。
 
 ## 功能
 
@@ -101,6 +114,24 @@ Developer ID 签名和 Apple notarization 流程见 [DISTRIBUTION.md](DISTRIBUTI
 - 定时任务：`~/.codex/automations/**/automation.toml` 中启用的 automation 元数据。
 
 当前 Codex 额度 API 暴露的是滚动窗口百分比和重置时间，不暴露绝对配额数量。更完整的数据口径和回退策略见 [RESEARCH.md](RESEARCH.md)。
+
+## 常见问题
+
+### codexU 是官方 OpenAI 产品吗？
+
+不是。codexU 是一个非官方的本地 macOS 工具，用于读取本机 Codex app-server 和本机 `~/.codex/` 数据。
+
+### codexU 会上传我的 Codex 线程或 usage 数据吗？
+
+不会。codexU 只在本机读取 Codex 账户额度、本机 SQLite usage 和 automation 元数据，不把这些数据上传到第三方服务。
+
+### 为什么显示的是剩余百分比，而不是绝对额度？
+
+当前 Codex 本地 API 暴露的是滚动窗口已用百分比和重置时间，不暴露绝对额度数量，所以 codexU 展示的是 5 小时和 7 天窗口的剩余百分比。
+
+### 支持 Intel Mac 吗？
+
+默认 release 是 Apple Silicon / arm64 DMG。Intel Mac 可以从源码构建，或在支持对应 target 的机器上使用 `TARGET_TRIPLE="x86_64-apple-macos14.0"` 打包。
 
 ## License
 
