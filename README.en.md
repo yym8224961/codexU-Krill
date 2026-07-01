@@ -1,66 +1,70 @@
-# codexU
+# codexU-Krill
 
-codexU is a macOS desktop widget for tracking proxy balance, OpenAI Codex / ChatGPT Codex quota, token usage, and today's task status. It keeps the information you check most on the desktop, so you can quickly see remaining balance, reset times, and daily work progress.
+codexU-Krill is a personal macOS usage widget for Codex users who primarily care about their Krill proxy balance. It keeps Krill balance, official Codex quota, local token usage, today's task board, and a native WidgetKit widget in one small desktop app.
 
-![codexU desktop widget screenshot](docs/screenshot.png)
+![codexU-Krill desktop widget screenshot](docs/screenshot.png)
 
-## Who It Is For
+## Highlights
 
-- Developers who use OpenAI Codex, Codex CLI, or the Codex desktop app every day.
-- Users of Krill or similar proxy providers who want their proxy wallet, package quota, and daily spend first.
-- ChatGPT Pro / Team users who want a quick view of Codex 5-hour quota, 7-day quota, token usage, and reset times.
-- macOS users who want to check Codex status without repeatedly opening a browser or terminal.
+- **Krill first**: opens in `Proxy` mode by default and shows wallet balance, today's spend, weekly quota, package quota, expiration, and API key usage summary.
+- **Official quota still available**: the top `Proxy | Official` switch keeps the original Codex 5-hour and 7-day quota view one click away.
+- **Progress bars for quotas**: weekly and package quota are rendered as compact progress bars.
+- **Quick login**: if the Krill session expires, open the in-app Krill login window from either the main app or the system widget.
+- **Native WidgetKit widget**: add `codexU` to Notification Center or the desktop. Small shows balance and quota progress; medium adds wallet, today spend, and local tokens.
+- **Local Codex stats**: reads local Codex state for today, last 7 days, lifetime tokens, and today's task board.
+- **Desktop-friendly**: the main window stays on the desktop layer by default, with `Command + U` to bring it forward.
+- **Chinese and English UI**: language follows the system time zone by default and can be switched manually.
 
-## Features
+## Install
 
-- Defaults to proxy balance mode, with a top `Proxy | Official` switch for the official Codex quota view.
-- In proxy mode, reads codexU's own Krill web session and shows wallet balance, package balance, today's request spend, and API key usage summary.
-- Provides a quick login button in proxy mode, opening an in-app Krill login window when the session expires.
-- Shows remaining and used Codex quota for the 5-hour and 7-day windows, including reset times.
-- Summarizes token usage for today, the last 7 days, and lifetime totals with a 7-day trend.
-- Builds a daily task board from local Codex threads and enabled Codex automations.
-- Groups work into active, pending, scheduled, and done columns.
-- Stays on the desktop layer by default, with `Command + U` foreground toggle.
-- Includes a native macOS WidgetKit widget for Notification Center or the desktop, showing proxy balance plus weekly and package quota progress.
-- Supports Chinese and English UI text. The default language follows the system time zone, and the top `中 | EN` switch can override it.
-- Reads data locally and does not upload usage, threads, or account data to a third-party service.
+Download the Apple Silicon build from Releases:
 
-## Keyboard Shortcuts
+[Download the latest DMG](https://github.com/yym8224961/codexU-Krill/releases/latest)
 
-- `Command + U`: toggle the widget between desktop layer and foreground layer.
-- Menu bar gauge icon: same toggle as `Command + U`.
-- Top `中 | EN` switch: switch between Chinese and English. Manual selection is kept for the next launch.
-- Top `Proxy | Official` switch: switch between proxy balance and official Codex quota. Proxy mode is the default.
-- Proxy-mode login button: opens the in-app Krill login window; close it after signing in to refresh.
-- System widget: add `codexU` from **Edit Widgets**. Click the widget to open the main app; when the session expires, the widget's `Login` link opens the main app's Krill login window.
-- Refresh button: immediately refresh quota, token usage, trend, and task board.
-- Close button: quit the widget.
-- Drag anywhere on the widget background to reposition it.
+Steps:
 
-## First Install: Privacy & Security
+1. Open `codexU-0.1.5-mac-arm64.dmg`.
+2. Drag `codexU.app` into `Applications`.
+3. Open codexU from `Applications`.
+4. If macOS blocks the app, go to **System Settings > Privacy & Security** and click **Open Anyway**.
 
-codexU is distributed outside the Mac App Store. On first launch, macOS may block it until you manually allow it:
+After the first launch, the main app writes the local snapshot used by WidgetKit. You can then add `codexU` from macOS **Edit Widgets**.
 
-1. Open `codexU.app` once. If macOS says it cannot be opened, cancel the dialog.
-2. Open **System Settings > Privacy & Security**.
-3. In the **Security** section, click **Open Anyway** for `codexU.app`.
-4. Confirm with Touch ID or your password, then click **Open**.
+## Usage
 
-You can also right-click `codexU.app` in Finder and choose **Open**, then confirm the same security prompt.
+- `Command + U`: toggle between desktop layer and foreground layer.
+- Menu bar gauge icon: same foreground toggle.
+- `Proxy | Official`: switch between Krill proxy balance and official Codex quota.
+- `中 | EN`: switch interface language.
+- Refresh button: refresh official quota, local stats, task board, and Krill balance.
+- Login button: open the in-app Krill login window; close the window after signing in to refresh.
+- System widget: click the widget to open the main app. If the session expires, click `Login` to open the Krill login window.
 
-codexU needs access to local Codex data under `~/.codex/`. If macOS asks for file or folder access, allow it so the widget can read local usage, threads, and automation metadata.
+## Data Sources And Privacy
 
-Proxy mode uses codexU's own `WKWebView` to open the Krill web app and read visible balance text. codexU does not read Chrome cookies, saved browser passwords, or automatically fill or submit login forms.
+codexU-Krill processes data locally:
 
-The WidgetKit widget only reads the local snapshot written by the main app at `~/Library/Application Support/codexU/widget-snapshot.json`. It does not run WebView, read `~/.codex/`, or store login credentials. On first install, or after the main app has not been opened for a while, the widget may show `Open codexU to refresh`.
+- Krill proxy balance: visible text from the signed-in Krill page inside codexU's own `WKWebView`.
+- WidgetKit widget: local snapshot written by the main app at `~/Library/Application Support/codexU/widget-snapshot.json`.
+- Official Codex quota: local `codex app-server` account and rate-limit data.
+- Local token usage: `~/.codex/state_5.sqlite`.
+- Today's task board: local Codex threads plus enabled automations metadata.
+
+It does not:
+
+- read Chrome or Safari cookies,
+- read saved browser passwords,
+- store or upload Krill credentials,
+- auto-fill or submit login forms,
+- upload Codex threads, usage, account data, or proxy balance.
 
 ## Requirements
 
 - macOS 14 or later.
-- A local Codex installation.
-- Proxy mode requires signing in through codexU's in-app Krill login window.
-- Official mode requires a signed-in Codex account for quota data.
-- Codex must have been used at least once so `~/.codex/state_5.sqlite` exists.
+- Apple Silicon Mac for the default release DMG.
+- A local Codex installation that has been used at least once, so `~/.codex/state_5.sqlite` exists.
+- Krill mode requires signing in through codexU's in-app Krill login window.
+- Official mode requires a signed-in local Codex account for quota data.
 - Xcode Command Line Tools for building from source.
 
 ## Build From Source
@@ -69,71 +73,52 @@ The WidgetKit widget only reads the local snapshot written by the main app at `~
 make build
 ```
 
-Run the app:
+Run:
 
 ```sh
 make run
 ```
 
-Install to `/Applications`:
-
-```sh
-make install
-```
-
-Inspect the data source output:
+Inspect local data source output:
 
 ```sh
 make probe
 ```
 
-## Package A DMG
+Package a DMG:
 
 ```sh
 make release
 ```
 
-Release artifacts are written to `dist/`, for example:
+Example artifacts:
 
 ```text
 dist/codexU-0.1.5-mac-arm64.dmg
 dist/codexU-0.1.5-mac-arm64.dmg.sha256
 ```
 
-For Developer ID signing and notarization, see [DISTRIBUTION.md](DISTRIBUTION.md).
-
-## Data Sources
-
-- Proxy balance: visible text from the signed-in Krill web page inside codexU's own `WKWebView`.
-- System widget: local snapshot file written by the main app.
-- Account and quota: `codex app-server` JSON-RPC methods `account/read`, `account/rateLimits/read`, and `account/usage/read`.
-- Local token usage: `~/.codex/state_5.sqlite`.
-- Today's board: unarchived and archived Codex threads in the local SQLite database.
-- Scheduled tasks: enabled automation metadata under `~/.codex/automations/**/automation.toml`.
-
-Current Codex quota APIs expose rolling-window percentages and reset times, not absolute account quota sizes. See [RESEARCH.md](RESEARCH.md) for the data model and fallback behavior.
-
 ## FAQ
 
-### Is codexU an official OpenAI product?
+### Why does the system widget say "Open codexU to refresh"?
 
-No. codexU is an unofficial local macOS utility for reading local Codex app-server responses and local `~/.codex/` data.
+The WidgetKit widget does not run WebView or read Codex data directly. Open the main app once so it can refresh and write the local widget snapshot.
 
-### Does codexU upload my Codex threads, usage, or proxy data?
+### Why use an in-app Krill login window?
 
-No. codexU reads Codex quota, local SQLite usage, automation metadata, and visible Krill balance text locally. It does not upload that data to a third-party service.
+Krill does not expose the required account-balance data through API-key permissions. This fork reads visible balance text from codexU's own `WKWebView` session, without touching browser cookies or saved passwords.
 
-### Does codexU read my Chrome login session?
+### Is this an official OpenAI product?
 
-No. Proxy mode does not read Chrome cookies, browser local storage, or saved passwords. The quick login entry opens codexU's own in-app Krill login window.
+No. codexU-Krill is a personal fork and local macOS utility for viewing Krill proxy balance and local Codex usage.
 
-### Why does codexU show remaining percentage instead of absolute quota?
+### Does it support Intel Macs?
 
-The current local Codex API exposes rolling-window usage percentages and reset times, not absolute quota sizes. codexU therefore shows remaining percentages for the 5-hour and 7-day windows.
+The default release is arm64. Intel Macs can build from source or package with:
 
-### Does codexU support Intel Macs?
-
-The default release is an Apple Silicon / arm64 DMG. Intel Macs can build from source, or you can package from a compatible toolchain with `TARGET_TRIPLE="x86_64-apple-macos14.0"`.
+```sh
+TARGET_TRIPLE="x86_64-apple-macos14.0" make release
+```
 
 ## License
 

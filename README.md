@@ -1,78 +1,73 @@
-# codexU
+# codexU-Krill
 
 [English](README.en.md)
 
-codexU 是一个 macOS 桌面小组件，用来查看中转站余额、OpenAI Codex / ChatGPT Codex 的额度窗口、token 用量和今日任务状态。它把常用信息放在桌面上，帮助你快速判断剩余额度、重置时间和当天工作进展。
+codexU-Krill 是一个为个人使用场景定制的 macOS Codex 额度小组件。它优先显示 Krill 中转站余额，同时保留官方 Codex 额度、本机 token 用量、今日任务看板和系统 WidgetKit 小组件。
 
-![codexU 桌面小组件截图](docs/screenshot.png)
+![codexU-Krill 桌面小组件截图](docs/screenshot.png)
 
-## 适合谁
+## 主要能力
 
-- 经常使用 OpenAI Codex、Codex CLI 或 Codex 桌面应用的开发者。
-- 使用 Krill 等中转站，并希望优先查看中转站钱包、套餐和今日花费的人。
-- 需要快速查看 5 小时/7 天额度、token 用量和重置时间的 ChatGPT Pro / Team 用户。
-- 想在桌面查看 Codex 使用状态、减少反复打开浏览器或终端的人。
-
-## 功能
-
-- 默认显示中转站余额，可通过顶部 `中转站 | 官方` 切换到官方 Codex 额度。
-- 中转站模式读取 codexU 自己的 Krill 网页登录态，显示钱包余额、套餐额度、今日请求花费和 API Key 使用摘要。
-- 中转站模式提供快捷登录入口，会打开内置 Krill 登录窗口，方便登录态失效后重新登录。
-- 展示 Codex 5 小时和 7 天额度的剩余比例、已用比例和重置时间。
-- 汇总今日、近 7 天和累计 token 用量，并显示 7 天使用趋势。
-- 从本机 Codex 线程和启用中的 automations 生成今日任务看板。
-- 按进行中、待处理、定时、完成四类组织任务。
-- 默认贴在桌面层，支持 `Command + U` 一键唤到前台。
-- 内置 macOS WidgetKit 系统小组件，可添加到通知中心或桌面，显示中转站余额、周额度和套餐额度进度。
-- 支持中文和英文界面，可根据系统时区自动选择，也可通过顶部 `中 | EN` 手动切换。
-- 本地读取数据，不上传 usage、线程或账户数据到第三方服务。
-
-## 快捷键和操作
-
-- `Command + U`：在桌面层和前台层之间切换小组件。
-- 菜单栏仪表图标：点击后执行和 `Command + U` 相同的切换操作。
-- 顶部 `中 | EN`：切换中文或英文界面，手动选择会在下次启动时保留。
-- 顶部 `中转站 | 官方`：切换中转站余额和官方 Codex 额度，默认使用中转站模式。
-- 中转站模式的登录按钮：打开内置 Krill 登录窗口；登录完成后关闭窗口并刷新。
-- 系统小组件：在 **编辑小组件** 中添加 `codexU`；点击小组件可打开主 App，登录态失效时点小组件里的 `登录` 会打开主 App 的 Krill 登录窗口。
-- 右上角刷新按钮：立即刷新额度、token 统计、趋势图和任务看板。
-- 右上角关闭按钮：退出 codexU。
-- 拖动小组件背景：移动小组件位置。
-
-## 首次安装：隐私与安全
-
-codexU 目前通过 GitHub Release 的 DMG 安装包分发，不经过 Mac App Store。第一次打开时，macOS 可能会拦截，需要手动允许：
-
-1. 打开 `codexU.app` 一次。如果系统提示无法打开，先取消弹窗。
-2. 打开 **系统设置 > 隐私与安全性**。
-3. 在 **安全性** 区域找到 `codexU.app`，点击 **仍要打开**。
-4. 使用 Touch ID 或密码确认，然后点击 **打开**。
-
-也可以在 Finder 中右键点击 `codexU.app`，选择 **打开**，再确认系统安全提示。
-
-codexU 需要读取本机 `~/.codex/` 下的 Codex 数据。如果 macOS 弹出文件或文件夹访问授权，请允许访问，否则小组件无法读取本机 usage、线程和自动化任务信息。
-
-中转站模式使用 codexU 内置的 `WKWebView` 打开 Krill 网页并读取可见余额文字。codexU 不读取 Chrome cookie、浏览器保存的密码，也不会自动填写或提交登录表单。
-
-系统 WidgetKit 小组件只读取主 App 写入本机 `~/Library/Application Support/codexU/widget-snapshot.json` 的快照，不直接运行 WebView、不读取 `~/.codex/`，也不保存登录凭证。首次安装或长时间未打开主 App 时，小组件可能显示“打开 codexU 刷新”。
+- **Krill 优先**：默认进入 `中转站` 模式，显示钱包余额、今日请求花费、周额度、套餐额度、到期时间和 API Key 使用摘要。
+- **官方额度可切换**：顶部 `中转站 | 官方` 可以切回 Codex 官方 5 小时 / 7 天额度窗口。
+- **额度进度条**：中转站周额度和套餐额度都以进度条展示，扫一眼就能知道还能用多少。
+- **快捷登录**：Krill 登录态失效时，可从主窗口或系统小组件直接打开内置 Krill 登录窗口。
+- **系统 WidgetKit 小组件**：可添加到 macOS 通知中心或桌面，小号显示余额与进度，中号显示余额、周额度、套餐额度、钱包和今日花费。
+- **本机统计**：读取本机 Codex SQLite 状态，显示今日、近 7 天和累计 token 用量，以及今日任务看板。
+- **桌面常驻**：主窗口默认贴在桌面层，支持 `Command + U` 在桌面层和前台层之间切换。
+- **中英双语**：支持中文和英文界面，默认按系统时区判断，也可以手动切换。
 
 ## 安装
 
-从 GitHub Release 下载最新的 `codexU-<version>-mac-arm64.dmg`：
+从 Release 下载 Apple Silicon 版本：
 
-1. 打开 DMG。
-2. 将 `codexU.app` 拖到 `Applications` 文件夹。
+[下载最新 DMG](https://github.com/yym8224961/codexU-Krill/releases/latest)
+
+安装步骤：
+
+1. 打开 `codexU-0.1.5-mac-arm64.dmg`。
+2. 将 `codexU.app` 拖到 `Applications`。
 3. 从 `Applications` 打开 codexU。
-4. 按上面的 **首次安装：隐私与安全** 步骤完成手动放行。
+4. 如果 macOS 拦截，进入 **系统设置 > 隐私与安全性**，点击 **仍要打开**。
+
+首次运行后，主 App 会写入系统小组件需要的本机快照。然后可以在 macOS 的 **编辑小组件** 中添加 `codexU`。
+
+## 使用
+
+- `Command + U`：切换桌面层 / 前台层。
+- 菜单栏仪表图标：执行同样的窗口切换。
+- `中转站 | 官方`：切换 Krill 中转站余额和官方 Codex 额度。
+- `中 | EN`：切换界面语言。
+- 刷新按钮：立即刷新官方额度、本机统计、任务看板和 Krill 余额。
+- 登录按钮：打开 codexU 内置 Krill 登录窗口；登录完成后关闭窗口即可刷新。
+- 系统小组件：点击小组件打开主 App；登录态失效时点击 `登录` 打开 Krill 登录窗口。
+
+## 数据来源与隐私
+
+codexU-Krill 只在本机处理数据：
+
+- Krill 中转站余额：来自 codexU 内置 `WKWebView` 中已登录 Krill 网页的可见文字。
+- 系统 WidgetKit 小组件：读取主 App 写入的本机快照 `~/Library/Application Support/codexU/widget-snapshot.json`。
+- 官方 Codex 额度：读取本机 `codex app-server` 的账户和 rate limit 数据。
+- 本机 token 用量：读取 `~/.codex/state_5.sqlite`。
+- 今日任务看板：读取本机 Codex 线程和 enabled automations 元数据。
+
+不会做的事：
+
+- 不读取 Chrome / Safari cookie。
+- 不读取浏览器保存的密码。
+- 不保存或上传 Krill 登录凭证。
+- 不自动填写或提交登录表单。
+- 不上传 Codex 线程、usage、账户信息或中转站余额。
 
 ## 运行要求
 
 - macOS 14 或更新版本。
-- 本机已安装 Codex。
-- 中转站模式需要在 codexU 内置 Krill 登录窗口中完成登录。
-- 官方模式需要已登录 Codex 账户，额度信息才会显示。
-- Codex 至少使用过一次，以便生成 `~/.codex/state_5.sqlite`。
-- 从源码构建时需要 Xcode Command Line Tools。
+- Apple Silicon Mac 默认可直接使用 release DMG。
+- 已安装并使用过 Codex，以生成本机 `~/.codex/state_5.sqlite`。
+- Krill 模式需要在 codexU 内置登录窗口中完成登录。
+- 官方模式需要本机 Codex 已登录，才能显示官方额度。
+- 从源码构建需要 Xcode Command Line Tools。
 
 ## 从源码构建
 
@@ -86,65 +81,46 @@ make build
 make run
 ```
 
-安装到 `/Applications`：
-
-```sh
-make install
-```
-
-检查本机数据源输出：
+检查本机数据源：
 
 ```sh
 make probe
 ```
 
-## 打包 DMG
+打包 DMG：
 
 ```sh
 make release
 ```
 
-产物会写入 `dist/`，例如：
+产物示例：
 
 ```text
 dist/codexU-0.1.5-mac-arm64.dmg
 dist/codexU-0.1.5-mac-arm64.dmg.sha256
 ```
 
-Developer ID 签名和 Apple notarization 流程见 [DISTRIBUTION.md](DISTRIBUTION.md)。
-
-## 数据来源
-
-- 中转站余额：codexU 内置 `WKWebView` 中已登录的 Krill 网页可见文本。
-- 系统小组件：主 App 写入的本机快照文件。
-- 账户与额度：`codex app-server` 的 `account/read`、`account/rateLimits/read`、`account/usage/read`。
-- 本机 token 用量：`~/.codex/state_5.sqlite`。
-- 今日任务看板：本机 SQLite 中未归档和今日归档的 Codex 线程。
-- 定时任务：`~/.codex/automations/**/automation.toml` 中启用的 automation 元数据。
-
-当前 Codex 额度 API 暴露的是滚动窗口百分比和重置时间，不暴露绝对配额数量。更完整的数据口径和回退策略见 [RESEARCH.md](RESEARCH.md)。
-
 ## 常见问题
 
-### codexU 是官方 OpenAI 产品吗？
+### 为什么系统小组件显示“打开 codexU 刷新”？
 
-不是。codexU 是一个非官方的本地 macOS 工具，用于读取本机 Codex app-server 和本机 `~/.codex/` 数据。
+WidgetKit 小组件不直接打开网页，也不直接读取 Codex 数据。先启动一次主 App，让它刷新并写入本机快照，小组件就会显示最新数据。
 
-### codexU 会上传我的 Codex 线程、usage 或中转站数据吗？
+### 为什么要用内置 Krill 登录窗口？
 
-不会。codexU 只在本机读取 Codex 账户额度、本机 SQLite usage、automation 元数据和内置 Krill 网页中的可见余额文字，不把这些数据上传到第三方服务。
+Krill 没有提供当前账号余额的 API 权限，所以这个版本使用 codexU 自己的 `WKWebView` 登录态读取网页可见余额。这样不需要读取浏览器 cookie，也避免接触浏览器保存的密码。
 
-### codexU 会读取我的 Chrome 登录态吗？
+### 这是官方 OpenAI 产品吗？
 
-不会。中转站模式不读取 Chrome cookie、浏览器本地存储或保存的密码。快捷登录入口打开的是 codexU 自己的内置 Krill 登录窗口。
-
-### 为什么显示的是剩余百分比，而不是绝对额度？
-
-当前 Codex 本地 API 暴露的是滚动窗口已用百分比和重置时间，不暴露绝对额度数量，所以 codexU 展示的是 5 小时和 7 天窗口的剩余百分比。
+不是。codexU-Krill 是个人 fork 的本地 macOS 工具，用于查看 Krill 中转站余额和本机 Codex 使用状态。
 
 ### 支持 Intel Mac 吗？
 
-默认 release 是 Apple Silicon / arm64 DMG。Intel Mac 可以从源码构建，或在支持对应 target 的机器上使用 `TARGET_TRIPLE="x86_64-apple-macos14.0"` 打包。
+默认 release 是 arm64 DMG。Intel Mac 可以从源码构建，或在支持对应 target 的机器上使用：
+
+```sh
+TARGET_TRIPLE="x86_64-apple-macos14.0" make release
+```
 
 ## License
 
