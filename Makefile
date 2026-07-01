@@ -6,7 +6,9 @@ DIST_DIR := dist
 APP_DIR := $(BUILD_DIR)/$(APP_NAME).app
 MACOS_DIR := $(APP_DIR)/Contents/MacOS
 RESOURCES_DIR := $(APP_DIR)/Contents/Resources
-SOURCES := Sources/CodexUsageWidget/main.swift
+SOURCES := $(wildcard Sources/CodexUsageWidget/*.swift)
+TEST_BUILD_DIR := .test-build
+TEST_SOURCES := Sources/CodexUsageWidget/ProxyBalance.swift Tests/ProxyBalanceParserTests.swift
 APP_ICON := Resources/codexU.icns
 DEPLOYMENT_TARGET ?= 14.0
 HOST_ARCH := $(shell uname -m)
@@ -24,20 +26,27 @@ else
 CODESIGN_FLAGS := --force --deep --options runtime --timestamp --sign "$(SIGN_IDENTITY)" $(CODESIGN_EXTRA_FLAGS)
 endif
 
-.PHONY: build run probe install dmg checksum release notarize verify clean clean-dist
+.PHONY: build run probe install dmg checksum release notarize verify test clean clean-dist
 
 build:
 	rm -rf "$(APP_DIR)"
 	mkdir -p "$(MACOS_DIR)" "$(RESOURCES_DIR)"
 	cp Resources/Info.plist "$(APP_DIR)/Contents/Info.plist"
 	cp "$(APP_ICON)" "$(RESOURCES_DIR)/"
-	MACOSX_DEPLOYMENT_TARGET="$(DEPLOYMENT_TARGET)" swiftc -O -parse-as-library $(SWIFTC_TARGET_FLAGS) "$(SOURCES)" \
+	MACOSX_DEPLOYMENT_TARGET="$(DEPLOYMENT_TARGET)" swiftc -O -parse-as-library $(SWIFTC_TARGET_FLAGS) $(SOURCES) \
 		-o "$(MACOS_DIR)/$(APP_NAME)" \
 		-framework Cocoa \
 		-framework Carbon \
-		-framework SwiftUI
+		-framework SwiftUI \
+		-framework WebKit
 	codesign $(CODESIGN_FLAGS) "$(APP_DIR)"
 	codesign --verify --deep --strict "$(APP_DIR)"
+
+test:
+	rm -rf "$(TEST_BUILD_DIR)"
+	mkdir -p "$(TEST_BUILD_DIR)"
+	swiftc $(TEST_SOURCES) -o "$(TEST_BUILD_DIR)/proxy-balance-tests"
+	"$(TEST_BUILD_DIR)/proxy-balance-tests"
 
 run: build
 	open "$(APP_DIR)"

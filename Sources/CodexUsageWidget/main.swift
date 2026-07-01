@@ -1,6 +1,7 @@
 import Cocoa
 import Carbon.HIToolbox
 import SwiftUI
+import WebKit
 
 struct RateWindow: Equatable {
     let usedPercent: Double
@@ -94,6 +95,7 @@ struct UsageSnapshot: Equatable {
     let secondary: RateWindow?
     let credits: CreditsInfo?
     let cloudLifetimeTokens: Int64?
+    let proxyBalance: ProxyBalance?
     let local: LocalUsage?
     let taskBoard: TaskBoard?
     let messages: [String]
@@ -107,6 +109,7 @@ struct UsageSnapshot: Equatable {
         secondary: nil,
         credits: nil,
         cloudLifetimeTokens: nil,
+        proxyBalance: nil,
         local: nil,
         taskBoard: nil,
         messages: ["正在读取 codexU 数据"]
@@ -122,6 +125,24 @@ struct UsageSnapshot: Equatable {
             secondary: secondary,
             credits: credits,
             cloudLifetimeTokens: cloudLifetimeTokens,
+            proxyBalance: proxyBalance,
+            local: local,
+            taskBoard: taskBoard,
+            messages: messages
+        )
+    }
+
+    func replacingProxyBalance(_ proxyBalance: ProxyBalance?) -> UsageSnapshot {
+        UsageSnapshot(
+            refreshedAt: refreshedAt,
+            account: account,
+            limitId: limitId,
+            limitName: limitName,
+            primary: primary,
+            secondary: secondary,
+            credits: credits,
+            cloudLifetimeTokens: cloudLifetimeTokens,
+            proxyBalance: proxyBalance,
             local: local,
             taskBoard: taskBoard,
             messages: messages
@@ -144,6 +165,7 @@ final class UsageStore: ObservableObject {
     private var fullTimer: Timer?
     private var taskBoardTimer: Timer?
     private var isRefreshingTaskBoard = false
+    private var isRefreshingProxyBalance = false
 
     func start() {
         refresh()
@@ -167,10 +189,15 @@ final class UsageStore: ObservableObject {
         DispatchQueue.global(qos: .utility).async {
             let snapshot = CodexUsageReader().load()
             DispatchQueue.main.async {
-                self.snapshot = snapshot
+                self.snapshot = snapshot.replacingProxyBalance(self.snapshot.proxyBalance)
                 self.isRefreshing = false
+                self.refreshProxyBalance()
             }
         }
+    }
+
+    func openProxyLogin() {
+        NotificationCenter.default.post(name: .openProxyLoginRequested, object: nil)
     }
 
     private func refreshTaskBoard() {
@@ -183,6 +210,17 @@ final class UsageStore: ObservableObject {
                 self.snapshot = self.snapshot.replacingTaskBoard(taskBoard)
                 self.isRefreshingTaskBoard = false
             }
+        }
+    }
+
+    private func refreshProxyBalance() {
+        guard !isRefreshingProxyBalance else { return }
+        isRefreshingProxyBalance = true
+
+        ProxyBalanceReader.shared.load { [weak self] balance in
+            guard let self else { return }
+            self.snapshot = self.snapshot.replacingProxyBalance(balance)
+            self.isRefreshingProxyBalance = false
         }
     }
 }
@@ -205,6 +243,7 @@ final class CodexUsageReader {
             secondary: appServer.secondary,
             credits: appServer.credits,
             cloudLifetimeTokens: appServer.cloudLifetimeTokens,
+            proxyBalance: nil,
             local: local,
             taskBoard: taskBoard,
             messages: messages
@@ -892,6 +931,7 @@ enum WidgetLanguage: String, CaseIterable, Equatable {
 struct UsageWidgetView: View {
     @ObservedObject var store: UsageStore
     @State private var language = WidgetLanguage.storedOrAutomatic()
+    @State private var sourceMode = BalanceSourceMode.storedOrDefault()
 
     static let widgetWidth: CGFloat = 820
     static let widgetDefaultHeight: CGFloat = 620
@@ -954,6 +994,10 @@ struct UsageWidgetView: View {
             LanguageSwitch(language: language) { selectedLanguage in
                 language = selectedLanguage
                 selectedLanguage.persist()
+            }
+            BalanceSourceSwitch(mode: sourceMode, language: language) { selectedMode in
+                sourceMode = selectedMode
+                selectedMode.persist()
             }
             accountPill
             planPill
@@ -1026,6 +1070,15 @@ struct UsageWidgetView: View {
     }
 
     private var usageOverviewSection: some View {
+        switch sourceMode {
+        case .proxy:
+            return AnyView(proxyUsageOverviewSection)
+        case .official:
+            return AnyView(officialUsageOverviewSection)
+        }
+    }
+
+    private var officialUsageOverviewSection: some View {
         HStack(alignment: .center, spacing: 26) {
             GaugeRing(
                 percent: primary?.remainingPercent ?? 0,
@@ -1050,18 +1103,82 @@ struct UsageWidgetView: View {
                     WindowRow(title: language.text("7 天额度窗口", "7-day quota window"), window: snapshot.secondary, accent: Color(red: 0.18, green: 0.44, blue: 0.72), language: language)
                 }
 
-                HStack(spacing: 12) {
-                    TokenMetricCard(title: language.text("今日", "Today"), value: formatTokens(snapshot.local?.todayTokens), tint: Color(red: 0.08, green: 0.62, blue: 0.48), language: language)
-                    TokenMetricCard(title: language.text("近 7 天", "Last 7 days"), value: formatTokens(snapshot.local?.sevenDayTokens), tint: Color(red: 0.92, green: 0.58, blue: 0.12), language: language)
-                    TokenMetricCard(title: language.text("累计", "Lifetime"), value: formatTokens(snapshot.local?.lifetimeTokens), tint: Color(red: 0.18, green: 0.44, blue: 0.72), language: language)
-                    MiniTrendCard(buckets: snapshot.local?.dailyBuckets ?? [], language: language)
-                }
+                localMetricsRow
             }
             .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 16)
         .sectionBackground()
+    }
+
+    private var proxyUsageOverviewSection: some View {
+        HStack(alignment: .center, spacing: 26) {
+            GaugeRing(
+                percent: proxyRemainingPercent,
+                available: proxyBalanceAvailable,
+                lineWidth: 13
+            )
+            .frame(width: 145, height: 145)
+            .overlay {
+                VStack(spacing: 3) {
+                    Text(proxyPrimaryText)
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.62)
+                    Text(language.text("中转站余额", "Proxy balance"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 8)
+            }
+
+            VStack(alignment: .leading, spacing: 13) {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    SectionTitle(title: language.text("Krill 中转站", "Krill proxy"), detail: proxyStatusText)
+                    Button {
+                        store.openProxyLogin()
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "person.crop.circle.badge.checkmark")
+                                .font(.system(size: 10, weight: .semibold))
+                            Text(language.text("登录", "Login"))
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                    }
+                    .buttonStyle(.plain)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(Color.primary.opacity(0.07))
+                    )
+                    .foregroundStyle(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 9) {
+                    ProxyBalanceRow(title: language.text("套餐可用", "Package available"), value: proxyPackageValue, detail: proxyPackageDetail, tint: Color(red: 0.08, green: 0.62, blue: 0.48))
+                    ProxyBalanceRow(title: language.text("钱包余额", "Wallet balance"), value: formatCurrency(snapshot.proxyBalance?.walletBalance), detail: language.text("套餐用完后消耗", "Used after packages"), tint: Color(red: 0.18, green: 0.44, blue: 0.72))
+                    ProxyBalanceRow(title: language.text("今日请求花费", "Today spend"), value: formatCurrency(snapshot.proxyBalance?.todaySpend), detail: proxyKeyUsageDetail, tint: Color(red: 0.92, green: 0.58, blue: 0.12))
+                }
+
+                localMetricsRow
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+        .sectionBackground()
+    }
+
+    private var localMetricsRow: some View {
+        HStack(spacing: 12) {
+            TokenMetricCard(title: language.text("今日", "Today"), value: formatTokens(snapshot.local?.todayTokens), tint: Color(red: 0.08, green: 0.62, blue: 0.48), language: language)
+            TokenMetricCard(title: language.text("近 7 天", "Last 7 days"), value: formatTokens(snapshot.local?.sevenDayTokens), tint: Color(red: 0.92, green: 0.58, blue: 0.12), language: language)
+            TokenMetricCard(title: language.text("累计", "Lifetime"), value: formatTokens(snapshot.local?.lifetimeTokens), tint: Color(red: 0.18, green: 0.44, blue: 0.72), language: language)
+            MiniTrendCard(buckets: snapshot.local?.dailyBuckets ?? [], language: language)
+        }
     }
 
     private var quotaSection: some View {
@@ -1178,6 +1295,7 @@ struct UsageWidgetView: View {
     }
 
     private var accountLabel: String {
+        if sourceMode == .proxy { return "Krill" }
         guard let account = snapshot.account else { return language.text("本机统计", "Local stats") }
         if account.type == "chatgpt" {
             return account.emailPresent ? language.text("ChatGPT 登录", "ChatGPT signed in") : "ChatGPT"
@@ -1186,12 +1304,71 @@ struct UsageWidgetView: View {
     }
 
     private var planLabel: String {
-        snapshot.account?.planType?.uppercased() ?? "LOCAL"
+        if sourceMode == .proxy {
+            return snapshot.proxyBalance?.packageName ?? "PROXY"
+        }
+        return snapshot.account?.planType?.uppercased() ?? "LOCAL"
     }
 
     private var primaryText: String {
         guard let primary else { return "--" }
         return "\(Int(primary.remainingPercent.rounded()))%"
+    }
+
+    private var proxyBalanceAvailable: Bool {
+        snapshot.proxyBalance?.status == .available
+    }
+
+    private var proxyPrimaryText: String {
+        guard let proxy = snapshot.proxyBalance, proxy.status == .available else { return "--" }
+        return formatCurrencyCompact(proxy.packageRemaining ?? proxy.walletBalance)
+    }
+
+    private var proxyRemainingPercent: Double {
+        guard let proxy = snapshot.proxyBalance, proxy.status == .available else { return 0 }
+        if let remaining = proxy.packageRemaining, let limit = proxy.packageLimit, limit > 0 {
+            return max(0, min(100, remaining / limit * 100))
+        }
+        if let wallet = proxy.walletBalance, wallet > 0 {
+            return 100
+        }
+        return 0
+    }
+
+    private var proxyPackageValue: String {
+        if let remaining = snapshot.proxyBalance?.packageRemaining,
+           let limit = snapshot.proxyBalance?.packageLimit {
+            return "\(formatCurrency(remaining)) / \(formatCurrency(limit))"
+        }
+        return formatCurrency(snapshot.proxyBalance?.packageRemaining)
+    }
+
+    private var proxyPackageDetail: String {
+        if let expires = snapshot.proxyBalance?.expiresAtText {
+            return language.text("到期 \(expires)", "Expires \(expires)")
+        }
+        return snapshot.proxyBalance?.packageName ?? language.text("网页登录态", "Web session")
+    }
+
+    private var proxyKeyUsageDetail: String {
+        guard let usage = snapshot.proxyBalance?.keyUsage else {
+            return language.text("API Keys 统计", "API Keys stats")
+        }
+        let cost = formatCurrency(usage.totalCost)
+        let requests = usage.requestCount.map { formatInteger($0) } ?? "--"
+        return language.text("Keys \(cost) · \(requests) 请求", "Keys \(cost) · \(requests) requests")
+    }
+
+    private var proxyStatusText: String {
+        guard let proxy = snapshot.proxyBalance else { return language.text("读取中", "Loading") }
+        switch proxy.status {
+        case .available:
+            return language.text("已连接", "Connected")
+        case .loggedOut:
+            return language.text("需要登录", "Login required")
+        case .unavailable:
+            return language.text("读取失败", "Unavailable")
+        }
     }
 
     private var creditsLabel: String {
@@ -1234,6 +1411,9 @@ struct UsageWidgetView: View {
 
     private var shouldShowEnvironmentChecklist: Bool {
         if snapshot.messages.contains("正在读取 codexU 数据") { return false }
+        if sourceMode == .proxy {
+            return snapshot.local == nil
+        }
         return (!snapshot.messages.isEmpty && (snapshot.primary == nil || snapshot.local == nil))
             || snapshot.account == nil
             || snapshot.local == nil
@@ -1243,7 +1423,7 @@ struct UsageWidgetView: View {
         var items: [DiagnosticItem] = []
         let messages = snapshot.messages.joined(separator: "\n")
 
-        if snapshot.primary == nil || snapshot.account == nil {
+        if sourceMode == .official && (snapshot.primary == nil || snapshot.account == nil) {
             if messages.contains("未找到 codex") {
                 items.append(DiagnosticItem(
                     id: "codex-missing",
@@ -1315,12 +1495,35 @@ struct UsageWidgetView: View {
     }
 
     private var statusColor: Color {
+        if sourceMode == .proxy {
+            switch snapshot.proxyBalance?.status {
+            case .available:
+                return Color(red: 0.08, green: 0.62, blue: 0.48)
+            case .loggedOut:
+                return Color(red: 0.86, green: 0.55, blue: 0.18)
+            case .unavailable, nil:
+                return Color(red: 0.82, green: 0.22, blue: 0.18)
+            }
+        }
         if primary == nil { return Color(red: 0.86, green: 0.55, blue: 0.18) }
         if (primary?.remainingPercent ?? 0) < 15 { return Color(red: 0.82, green: 0.22, blue: 0.18) }
         return Color(red: 0.08, green: 0.62, blue: 0.48)
     }
 
     private var statusText: String {
+        if sourceMode == .proxy {
+            if let proxy = snapshot.proxyBalance {
+                switch proxy.status {
+                case .available:
+                    return language.text("Krill 网页会话已读取", "Krill web session loaded")
+                case .loggedOut:
+                    return language.text("点击登录以刷新 Krill 会话", "Log in to refresh the Krill session")
+                case .unavailable:
+                    return localizedProxyMessage(proxy.message, language: language)
+                }
+            }
+            return language.text("正在读取 Krill 中转站", "Reading Krill proxy")
+        }
         if let first = snapshot.messages.first { return localizedReaderMessage(first, language: language) }
         if snapshot.primary != nil { return "app-server + SQLite" }
         return "SQLite only"
@@ -1359,6 +1562,26 @@ struct LanguageSwitch: View {
         .pickerStyle(.segmented)
         .controlSize(.mini)
         .frame(width: 70)
+    }
+}
+
+struct BalanceSourceSwitch: View {
+    let mode: BalanceSourceMode
+    let language: WidgetLanguage
+    let onSelect: (BalanceSourceMode) -> Void
+
+    var body: some View {
+        Picker("", selection: Binding(
+            get: { mode },
+            set: { onSelect($0) }
+        )) {
+            Text(language.text("中转站", "Proxy")).tag(BalanceSourceMode.proxy)
+            Text(language.text("官方", "Official")).tag(BalanceSourceMode.official)
+        }
+        .labelsHidden()
+        .pickerStyle(.segmented)
+        .controlSize(.mini)
+        .frame(width: language.isChinese ? 112 : 128)
     }
 }
 
@@ -1530,6 +1753,45 @@ struct WindowRow: View {
             return language.text("已用 \(used) · \(resetDateTime(resetsAt, language: language)) 重置", "Used \(used) · resets \(resetDateTime(resetsAt, language: language))")
         }
         return language.text("已用 \(used)", "Used \(used)")
+    }
+}
+
+struct ProxyBalanceRow: View {
+    let title: String
+    let value: String
+    let detail: String
+    let tint: Color
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(tint)
+                .frame(width: 6, height: 30)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold))
+                Text(detail)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            Text(value)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color.white.opacity(0.13))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.8)
+                )
+        )
     }
 }
 
@@ -1870,6 +2132,26 @@ private func formatTokens(_ value: Int64?) -> String {
     return "\(value)"
 }
 
+private func formatInteger(_ value: Int) -> String {
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .decimal
+    return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
+}
+
+private func formatCurrency(_ value: Double?) -> String {
+    guard let value else { return "--" }
+    return String(format: "$%.2f", value)
+}
+
+private func formatCurrencyCompact(_ value: Double?) -> String {
+    guard let value else { return "--" }
+    let absValue = abs(value)
+    if absValue >= 1_000 {
+        return String(format: "$%.1fK", value / 1_000)
+    }
+    return String(format: "$%.2f", value)
+}
+
 private func formatUsagePercent(_ value: Double) -> String {
     if value > 0, value < 1 {
         return "<1%"
@@ -1946,6 +2228,20 @@ private func localizedReaderMessage(_ message: String, language: WidgetLanguage)
     if message.contains("SQLite 查询失败") { return "SQLite query failed" }
     if message.contains("任务看板未找到 SQLite 数据源") { return "Task board SQLite data source not found" }
     if message.contains("app-server") { return message.replacingOccurrences(of: "未知错误", with: "Unknown error") }
+    return message
+}
+
+private func localizedProxyMessage(_ message: String?, language: WidgetLanguage) -> String {
+    guard let message else {
+        return language.text("中转站余额暂不可用", "Proxy balance unavailable")
+    }
+    guard !language.isChinese else {
+        if message.contains("timed out") { return "Krill 网页会话超时" }
+        if message.contains("failed to load") { return "Krill 页面加载失败" }
+        if message.contains("not found") { return "未找到 Krill 余额数据" }
+        if message.contains("login") { return "需要登录 Krill" }
+        return message
+    }
     return message
 }
 
@@ -2044,6 +2340,27 @@ private func dumpJSON(_ snapshot: UsageSnapshot) {
         ] as [String: Any]
     }
 
+    if let proxy = snapshot.proxyBalance {
+        object["proxyBalance"] = [
+            "status": proxy.status.rawValue,
+            "sourceURL": jsonValue(proxy.sourceURL),
+            "todaySpend": jsonValue(proxy.todaySpend),
+            "walletBalance": jsonValue(proxy.walletBalance),
+            "packageName": jsonValue(proxy.packageName),
+            "packageRemaining": jsonValue(proxy.packageRemaining),
+            "packageLimit": jsonValue(proxy.packageLimit),
+            "expiresAtText": jsonValue(proxy.expiresAtText),
+            "message": jsonValue(proxy.message),
+            "keyUsage": proxy.keyUsage.map { usage in
+                [
+                    "totalCost": jsonValue(usage.totalCost),
+                    "requestCount": jsonValue(usage.requestCount),
+                    "tokenCount": jsonValue(usage.tokenCount)
+                ] as [String: Any]
+            } ?? NSNull()
+        ] as [String: Any]
+    }
+
     if let taskBoard = snapshot.taskBoard {
         object["taskBoard"] = [
             "refreshedAt": isoString(taskBoard.refreshedAt) ?? "",
@@ -2102,6 +2419,176 @@ private func debugLog(_ message: String) {
 
 private func firstExecutablePath(_ paths: [String]) -> String? {
     paths.first { FileManager.default.isExecutableFile(atPath: $0) }
+}
+
+extension Notification.Name {
+    static let openProxyLoginRequested = Notification.Name("codexU.openProxyLoginRequested")
+}
+
+private enum ProxyWebSession {
+    static let appURL = URL(string: "https://www.krill-ai.com/app")!
+    static let activityURL = URL(string: "https://www.krill-ai.com/app/activity")!
+    static let keysURL = URL(string: "https://www.krill-ai.com/app/keys")!
+
+    static func configuration() -> WKWebViewConfiguration {
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .default()
+        return configuration
+    }
+}
+
+final class ProxyBalanceReader: NSObject, WKNavigationDelegate {
+    static let shared = ProxyBalanceReader()
+
+    private var webView: WKWebView?
+    private var pendingURLs: [URL] = []
+    private var collectedText = ""
+    private var completion: ((ProxyBalance) -> Void)?
+    private var timeoutWorkItem: DispatchWorkItem?
+    private var didComplete = false
+
+    func load(completion: @escaping (ProxyBalance) -> Void) {
+        DispatchQueue.main.async {
+            self.loadOnMain(completion: completion)
+        }
+    }
+
+    private func loadOnMain(completion: @escaping (ProxyBalance) -> Void) {
+        timeoutWorkItem?.cancel()
+        self.completion = completion
+        didComplete = false
+        collectedText = ""
+        pendingURLs = [ProxyWebSession.appURL, ProxyWebSession.activityURL, ProxyWebSession.keysURL]
+
+        let timeout = DispatchWorkItem { [weak self] in
+            self?.finish(.unavailable("Krill web session timed out", sourceURL: ProxyWebSession.appURL.absoluteString))
+        }
+        timeoutWorkItem = timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 28, execute: timeout)
+
+        loadNextPage()
+    }
+
+    private func loadNextPage() {
+        guard !didComplete else { return }
+        guard let url = pendingURLs.first else {
+            let parsed = ProxyBalanceParser.parse(text: collectedText, sourceURL: ProxyWebSession.appURL.absoluteString)
+            finish(parsed)
+            return
+        }
+
+        pendingURLs.removeFirst()
+        let webView = existingWebView()
+        webView.navigationDelegate = self
+        webView.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 18))
+    }
+
+    private func existingWebView() -> WKWebView {
+        if let webView {
+            return webView
+        }
+
+        let webView = WKWebView(
+            frame: NSRect(x: 0, y: 0, width: 1280, height: 900),
+            configuration: ProxyWebSession.configuration()
+        )
+        self.webView = webView
+        return webView
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) { [weak self, weak webView] in
+            guard let self, let webView, !self.didComplete else { return }
+            self.captureText(from: webView)
+        }
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        finish(.unavailable("Krill page failed to load", sourceURL: webView.url?.absoluteString))
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        finish(.unavailable("Krill page failed to load", sourceURL: webView.url?.absoluteString))
+    }
+
+    private func captureText(from webView: WKWebView) {
+        webView.evaluateJavaScript("document.body ? document.body.innerText : ''") { [weak self] result, error in
+            guard let self, !self.didComplete else { return }
+            if let text = result as? String, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                self.collectedText += "\n" + text
+            }
+
+            let parsed = ProxyBalanceParser.parse(text: self.collectedText, sourceURL: ProxyWebSession.appURL.absoluteString)
+            if parsed.status == .loggedOut {
+                self.finish(parsed)
+            } else {
+                self.loadNextPage()
+            }
+        }
+    }
+
+    private func finish(_ balance: ProxyBalance) {
+        guard !didComplete else { return }
+        didComplete = true
+        timeoutWorkItem?.cancel()
+        timeoutWorkItem = nil
+        let completion = completion
+        self.completion = nil
+        DispatchQueue.main.async {
+            completion?(balance)
+        }
+    }
+}
+
+final class ProxyLoginWindowController: NSObject, NSWindowDelegate {
+    private var window: NSWindow?
+    private var webView: WKWebView?
+    private var onClose: (() -> Void)?
+
+    func show(onClose: @escaping () -> Void) {
+        DispatchQueue.main.async {
+            self.showOnMain(onClose: onClose)
+        }
+    }
+
+    private func showOnMain(onClose: @escaping () -> Void) {
+        self.onClose = onClose
+
+        if let window {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let webView = WKWebView(
+            frame: NSRect(x: 0, y: 0, width: 1120, height: 760),
+            configuration: ProxyWebSession.configuration()
+        )
+        webView.load(URLRequest(url: ProxyWebSession.appURL))
+        self.webView = webView
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 1120, height: 760),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Krill Login"
+        window.contentView = webView
+        window.delegate = self
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        self.window = window
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        window = nil
+        webView = nil
+        let onClose = onClose
+        self.onClose = nil
+        onClose?()
+    }
 }
 
 final class DraggableHostingView<Content: View>: NSHostingView<Content> {
@@ -2191,6 +2678,7 @@ final class DesktopWidgetWindow: NSPanel {
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let store = UsageStore()
+    private let proxyLoginWindowController = ProxyLoginWindowController()
     private var window: DesktopWidgetWindow?
     private var statusItem: NSStatusItem?
     private var globalHotKeyRef: EventHotKeyRef?
@@ -2221,10 +2709,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         setupStatusItem()
         registerGlobalHotKey()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(openProxyLogin),
+            name: .openProxyLoginRequested,
+            object: nil
+        )
         store.start()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        NotificationCenter.default.removeObserver(self)
         unregisterGlobalHotKey()
         store.stop()
     }
@@ -2242,6 +2737,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @objc private func statusItemClicked() {
         toggleWindowLayer()
+    }
+
+    @objc private func openProxyLogin() {
+        proxyLoginWindowController.show { [weak self] in
+            self?.store.refresh()
+        }
     }
 
     private func setupStatusItem() {

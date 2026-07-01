@@ -1,17 +1,21 @@
 # codexU
 
-codexU is a macOS desktop widget for tracking OpenAI Codex / ChatGPT Codex quota, token usage, and today's task status. It keeps the information you check most on the desktop, so you can quickly see remaining quota, reset times, and daily work progress.
+codexU is a macOS desktop widget for tracking proxy balance, OpenAI Codex / ChatGPT Codex quota, token usage, and today's task status. It keeps the information you check most on the desktop, so you can quickly see remaining balance, reset times, and daily work progress.
 
 ![codexU desktop widget screenshot](docs/screenshot.png)
 
 ## Who It Is For
 
 - Developers who use OpenAI Codex, Codex CLI, or the Codex desktop app every day.
+- Users of Krill or similar proxy providers who want their proxy wallet, package quota, and daily spend first.
 - ChatGPT Pro / Team users who want a quick view of Codex 5-hour quota, 7-day quota, token usage, and reset times.
 - macOS users who want to check Codex status without repeatedly opening a browser or terminal.
 
 ## Features
 
+- Defaults to proxy balance mode, with a top `Proxy | Official` switch for the official Codex quota view.
+- In proxy mode, reads codexU's own Krill web session and shows wallet balance, package balance, today's request spend, and API key usage summary.
+- Provides a quick login button in proxy mode, opening an in-app Krill login window when the session expires.
 - Shows remaining and used Codex quota for the 5-hour and 7-day windows, including reset times.
 - Summarizes token usage for today, the last 7 days, and lifetime totals with a 7-day trend.
 - Builds a daily task board from local Codex threads and enabled Codex automations.
@@ -25,6 +29,8 @@ codexU is a macOS desktop widget for tracking OpenAI Codex / ChatGPT Codex quota
 - `Command + U`: toggle the widget between desktop layer and foreground layer.
 - Menu bar gauge icon: same toggle as `Command + U`.
 - Top `中 | EN` switch: switch between Chinese and English. Manual selection is kept for the next launch.
+- Top `Proxy | Official` switch: switch between proxy balance and official Codex quota. Proxy mode is the default.
+- Proxy-mode login button: opens the in-app Krill login window; close it after signing in to refresh.
 - Refresh button: immediately refresh quota, token usage, trend, and task board.
 - Close button: quit the widget.
 - Drag anywhere on the widget background to reposition it.
@@ -42,11 +48,14 @@ You can also right-click `codexU.app` in Finder and choose **Open**, then confir
 
 codexU needs access to local Codex data under `~/.codex/`. If macOS asks for file or folder access, allow it so the widget can read local usage, threads, and automation metadata.
 
+Proxy mode uses codexU's own `WKWebView` to open the Krill web app and read visible balance text. codexU does not read Chrome cookies, saved browser passwords, or automatically fill or submit login forms.
+
 ## Requirements
 
 - macOS 14 or later.
 - A local Codex installation.
-- A signed-in Codex account for quota data.
+- Proxy mode requires signing in through codexU's in-app Krill login window.
+- Official mode requires a signed-in Codex account for quota data.
 - Codex must have been used at least once so `~/.codex/state_5.sqlite` exists.
 - Xcode Command Line Tools for building from source.
 
@@ -91,6 +100,7 @@ For Developer ID signing and notarization, see [DISTRIBUTION.md](DISTRIBUTION.md
 
 ## Data Sources
 
+- Proxy balance: visible text from the signed-in Krill web page inside codexU's own `WKWebView`.
 - Account and quota: `codex app-server` JSON-RPC methods `account/read`, `account/rateLimits/read`, and `account/usage/read`.
 - Local token usage: `~/.codex/state_5.sqlite`.
 - Today's board: unarchived and archived Codex threads in the local SQLite database.
@@ -104,9 +114,13 @@ Current Codex quota APIs expose rolling-window percentages and reset times, not 
 
 No. codexU is an unofficial local macOS utility for reading local Codex app-server responses and local `~/.codex/` data.
 
-### Does codexU upload my Codex threads or usage data?
+### Does codexU upload my Codex threads, usage, or proxy data?
 
-No. codexU reads Codex quota, local SQLite usage, and automation metadata locally. It does not upload that data to a third-party service.
+No. codexU reads Codex quota, local SQLite usage, automation metadata, and visible Krill balance text locally. It does not upload that data to a third-party service.
+
+### Does codexU read my Chrome login session?
+
+No. Proxy mode does not read Chrome cookies, browser local storage, or saved passwords. The quick login entry opens codexU's own in-app Krill login window.
 
 ### Why does codexU show remaining percentage instead of absolute quota?
 
