@@ -25,6 +25,8 @@ struct ProxyBalanceParserTestRunner {
         assertClose(balance.todaySpend, 8.44, "today spend")
         assertClose(balance.walletBalance, 0.0, "wallet balance")
         assertEqual(balance.packageName, "轻享月卡", "package name")
+        assertClose(balance.weeklyRemaining, 554.47, "weekly remaining")
+        assertClose(balance.weeklyLimit, 600.0, "weekly limit")
         assertClose(balance.packageRemaining, 1154.47, "package remaining prefers largest usable package window")
         assertClose(balance.packageLimit, 2400.0, "package limit")
         assertEqual(balance.expiresAtText, "2026-07-15 21:20:55", "expires text")

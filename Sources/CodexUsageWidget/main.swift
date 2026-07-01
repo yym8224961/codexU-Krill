@@ -1158,6 +1158,7 @@ struct UsageWidgetView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 9) {
+                    ProxyBalanceRow(title: language.text("本周额度", "Weekly quota"), value: proxyWeeklyValue, detail: language.text("Krill 周期额度", "Krill weekly cycle"), tint: Color(red: 0.37, green: 0.39, blue: 0.74))
                     ProxyBalanceRow(title: language.text("套餐可用", "Package available"), value: proxyPackageValue, detail: proxyPackageDetail, tint: Color(red: 0.08, green: 0.62, blue: 0.48))
                     ProxyBalanceRow(title: language.text("钱包余额", "Wallet balance"), value: formatCurrency(snapshot.proxyBalance?.walletBalance), detail: language.text("套餐用完后消耗", "Used after packages"), tint: Color(red: 0.18, green: 0.44, blue: 0.72))
                     ProxyBalanceRow(title: language.text("今日请求花费", "Today spend"), value: formatCurrency(snapshot.proxyBalance?.todaySpend), detail: proxyKeyUsageDetail, tint: Color(red: 0.92, green: 0.58, blue: 0.12))
@@ -1341,6 +1342,14 @@ struct UsageWidgetView: View {
             return "\(formatCurrency(remaining)) / \(formatCurrency(limit))"
         }
         return formatCurrency(snapshot.proxyBalance?.packageRemaining)
+    }
+
+    private var proxyWeeklyValue: String {
+        if let remaining = snapshot.proxyBalance?.weeklyRemaining,
+           let limit = snapshot.proxyBalance?.weeklyLimit {
+            return "\(formatCurrency(remaining)) / \(formatCurrency(limit))"
+        }
+        return formatCurrency(snapshot.proxyBalance?.weeklyRemaining)
     }
 
     private var proxyPackageDetail: String {
@@ -2347,6 +2356,8 @@ private func dumpJSON(_ snapshot: UsageSnapshot) {
             "todaySpend": jsonValue(proxy.todaySpend),
             "walletBalance": jsonValue(proxy.walletBalance),
             "packageName": jsonValue(proxy.packageName),
+            "weeklyRemaining": jsonValue(proxy.weeklyRemaining),
+            "weeklyLimit": jsonValue(proxy.weeklyLimit),
             "packageRemaining": jsonValue(proxy.packageRemaining),
             "packageLimit": jsonValue(proxy.packageLimit),
             "expiresAtText": jsonValue(proxy.expiresAtText),

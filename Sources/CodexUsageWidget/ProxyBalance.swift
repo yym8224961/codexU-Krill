@@ -36,6 +36,8 @@ struct ProxyBalance: Equatable {
     let todaySpend: Double?
     let walletBalance: Double?
     let packageName: String?
+    let weeklyRemaining: Double?
+    let weeklyLimit: Double?
     let packageRemaining: Double?
     let packageLimit: Double?
     let expiresAtText: String?
@@ -49,6 +51,8 @@ struct ProxyBalance: Equatable {
             todaySpend: nil,
             walletBalance: nil,
             packageName: nil,
+            weeklyRemaining: nil,
+            weeklyLimit: nil,
             packageRemaining: nil,
             packageLimit: nil,
             expiresAtText: nil,
@@ -64,6 +68,8 @@ struct ProxyBalance: Equatable {
             todaySpend: nil,
             walletBalance: nil,
             packageName: nil,
+            weeklyRemaining: nil,
+            weeklyLimit: nil,
             packageRemaining: nil,
             packageLimit: nil,
             expiresAtText: nil,
@@ -84,6 +90,7 @@ enum ProxyBalanceParser {
 
         let todaySpend = currencyAfter(label: "今日请求花费", in: lines)
         let walletBalance = currencyAfter(label: "钱包余额", in: lines)
+        let weeklyInfo = quotaInfo(after: "本周额度", in: lines)
         let packageInfo = bestPackageInfo(in: joined)
         let expiresAtText = textAfter(label: "到期时间", in: lines)
         let packageName = packageName(in: lines)
@@ -91,6 +98,7 @@ enum ProxyBalanceParser {
 
         let hasData = todaySpend != nil
             || walletBalance != nil
+            || weeklyInfo.remaining != nil
             || packageInfo.remaining != nil
             || keyUsage != nil
 
@@ -104,6 +112,8 @@ enum ProxyBalanceParser {
             todaySpend: todaySpend,
             walletBalance: walletBalance,
             packageName: packageName,
+            weeklyRemaining: weeklyInfo.remaining,
+            weeklyLimit: weeklyInfo.limit,
             packageRemaining: packageInfo.remaining,
             packageLimit: packageInfo.limit,
             expiresAtText: expiresAtText,
@@ -163,6 +173,28 @@ enum ProxyBalanceParser {
             return (remaining, limit)
         }
         return values.max { $0.1 < $1.1 } ?? (nil, nil)
+    }
+
+    private static func quotaInfo(after label: String, in lines: [String]) -> (remaining: Double?, limit: Double?) {
+        guard let index = lines.firstIndex(where: { $0.contains(label) }) else {
+            return (nil, nil)
+        }
+        for line in lines.dropFirst(index + 1).prefix(4) {
+            if let info = quotaInfo(in: line) {
+                return info
+            }
+        }
+        return (nil, nil)
+    }
+
+    private static func quotaInfo(in text: String) -> (remaining: Double, limit: Double)? {
+        let pattern = #"剩余\s*\$([0-9,]+(?:\.[0-9]+)?)\s*/\s*\$([0-9,]+(?:\.[0-9]+)?)"#
+        guard let match = regexMatches(pattern: pattern, in: text).first,
+              match.count >= 3,
+              let remaining = parseDouble(match[1]),
+              let limit = parseDouble(match[2])
+        else { return nil }
+        return (remaining, limit)
     }
 
     private static func parseKeyUsage(from text: String) -> ProxyKeyUsage? {
