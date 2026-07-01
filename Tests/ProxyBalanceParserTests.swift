@@ -62,6 +62,50 @@ struct ProxyBalanceParserTestRunner {
         let invalidProgress = ProxyQuotaProgress(remaining: 10, limit: 0)
         assertEqual(invalidProgress == nil, true, "quota progress rejects invalid limit")
 
+        let refreshedAt = Date(timeIntervalSince1970: 1_788_291_125)
+        let widgetSnapshot = CodexUWidgetSnapshot(
+            refreshedAt: refreshedAt,
+            sourceMode: .proxy,
+            proxy: WidgetProxySnapshot(
+                status: .available,
+                primaryText: "$1.2K",
+                statusText: "已连接",
+                message: nil,
+                walletBalance: 0,
+                todaySpend: 8.44,
+                weeklyRemaining: 554.47,
+                weeklyLimit: 600,
+                packageName: "轻享月卡",
+                packageRemaining: 1154.47,
+                packageLimit: 2400,
+                expiresAtText: "2026-07-15 21:20:55",
+                keyUsageCost: 2856.8138,
+                keyRequestCount: 28175
+            ),
+            official: WidgetOfficialSnapshot(
+                primaryRemainingPercent: 82,
+                primaryUsedPercent: 18,
+                primaryResetsAt: refreshedAt.addingTimeInterval(3600),
+                secondaryRemainingPercent: 64,
+                secondaryUsedPercent: 36,
+                secondaryResetsAt: refreshedAt.addingTimeInterval(86_400)
+            ),
+            local: WidgetLocalSnapshot(
+                todayTokens: 12_300,
+                sevenDayTokens: 98_700,
+                lifetimeTokens: 1_234_500
+            ),
+            message: "ok"
+        )
+
+        let encoded = try! WidgetSnapshotCodec.encode(widgetSnapshot)
+        let decoded = try! WidgetSnapshotCodec.decode(encoded)
+        assertEqual(decoded, widgetSnapshot, "widget snapshot round trip")
+        assertClose(decoded.proxy?.weeklyProgress?.availableFraction, 0.9241166667, "widget weekly progress")
+        assertClose(decoded.proxy?.packageProgress?.availableFraction, 0.4810291667, "widget package progress")
+        assertEqual(CodexUWidgetSnapshot.empty.sourceMode, .proxy, "widget empty defaults to proxy")
+        assertEqual(CodexUWidgetSnapshot.empty.proxy?.status, .unavailable, "widget empty proxy unavailable")
+
         print("ProxyBalanceParserTests passed")
     }
 

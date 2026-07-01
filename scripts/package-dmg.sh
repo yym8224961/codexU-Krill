@@ -37,14 +37,17 @@ ${DISPLAY_NAME} ${VERSION}
 - macOS 14 或更新版本。
 - 本机已安装并登录 Codex。
 - Codex 至少使用过一次，以便生成 ~/.codex/state_5.sqlite。
+- 系统小组件可在 macOS 的“编辑小组件”里添加 codexU。
 
 权限:
 - 全局快捷键 Command + U 用于唤起/收起。
 - 菜单栏图标也可以用于切换前台/桌面层。
+- 中转站登录入口使用应用内 Krill 登录窗口。
 
 隐私:
 - 本应用只读取本机 Codex app-server 和 ~/.codex 的本地统计数据。
-- 不读取认证 token，不上传数据。
+- 中转站模式读取应用内 Krill 网页的可见余额文字，不读取浏览器 cookie 或保存的密码。
+- 系统小组件只读取主应用写入的本机快照，不读取认证 token，不上传数据。
 README
 
 rm -f "$DMG_PATH" "$TMP_DMG"

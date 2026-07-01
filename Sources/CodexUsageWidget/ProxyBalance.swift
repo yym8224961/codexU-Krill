@@ -1,6 +1,6 @@
 import Foundation
 
-enum BalanceSourceMode: String, CaseIterable, Equatable {
+enum BalanceSourceMode: String, CaseIterable, Equatable, Codable {
     case proxy
     case official
 
@@ -18,7 +18,7 @@ enum BalanceSourceMode: String, CaseIterable, Equatable {
     }
 }
 
-enum ProxyBalanceStatus: String, Equatable {
+enum ProxyBalanceStatus: String, Equatable, Codable {
     case available
     case loggedOut
     case unavailable

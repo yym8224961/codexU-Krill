@@ -1,6 +1,7 @@
 import Cocoa
 import Carbon.HIToolbox
 import SwiftUI
+import WidgetKit
 import WebKit
 
 struct RateWindow: Equatable {
@@ -191,6 +192,7 @@ final class UsageStore: ObservableObject {
             DispatchQueue.main.async {
                 self.snapshot = snapshot.replacingProxyBalance(self.snapshot.proxyBalance)
                 self.isRefreshing = false
+                self.publishWidgetSnapshot()
                 self.refreshProxyBalance()
             }
         }
@@ -198,6 +200,20 @@ final class UsageStore: ObservableObject {
 
     func openProxyLogin() {
         NotificationCenter.default.post(name: .openProxyLoginRequested, object: nil)
+    }
+
+    func publishWidgetSnapshot() {
+        let widgetSnapshot = makeWidgetSnapshot(from: snapshot)
+        DispatchQueue.global(qos: .utility).async {
+            do {
+                try WidgetSnapshotStore.write(widgetSnapshot)
+                DispatchQueue.main.async {
+                    WidgetCenter.shared.reloadTimelines(ofKind: CodexUWidgetConstants.kind)
+                }
+            } catch {
+                debugLog("widget snapshot write failed: \(error.localizedDescription)")
+            }
+        }
     }
 
     private func refreshTaskBoard() {
@@ -221,6 +237,7 @@ final class UsageStore: ObservableObject {
             guard let self else { return }
             self.snapshot = self.snapshot.replacingProxyBalance(balance)
             self.isRefreshingProxyBalance = false
+            self.publishWidgetSnapshot()
         }
     }
 }
@@ -998,6 +1015,7 @@ struct UsageWidgetView: View {
             BalanceSourceSwitch(mode: sourceMode, language: language) { selectedMode in
                 sourceMode = selectedMode
                 selectedMode.persist()
+                store.publishWidgetSnapshot()
             }
             accountPill
             planPill
@@ -2322,6 +2340,76 @@ private func jsonValue<T>(_ value: T?) -> Any {
     value.map { $0 as Any } ?? NSNull()
 }
 
+private func makeWidgetSnapshot(from snapshot: UsageSnapshot) -> CodexUWidgetSnapshot {
+    CodexUWidgetSnapshot(
+        refreshedAt: snapshot.refreshedAt,
+        sourceMode: BalanceSourceMode.storedOrDefault(),
+        proxy: makeWidgetProxySnapshot(from: snapshot.proxyBalance),
+        official: WidgetOfficialSnapshot(
+            primaryRemainingPercent: snapshot.primary?.remainingPercent,
+            primaryUsedPercent: snapshot.primary?.usedPercent,
+            primaryResetsAt: snapshot.primary?.resetsAt,
+            secondaryRemainingPercent: snapshot.secondary?.remainingPercent,
+            secondaryUsedPercent: snapshot.secondary?.usedPercent,
+            secondaryResetsAt: snapshot.secondary?.resetsAt
+        ),
+        local: WidgetLocalSnapshot(
+            todayTokens: snapshot.local?.todayTokens,
+            sevenDayTokens: snapshot.local?.sevenDayTokens,
+            lifetimeTokens: snapshot.local?.lifetimeTokens
+        ),
+        message: snapshot.messages.first
+    )
+}
+
+private func makeWidgetProxySnapshot(from proxy: ProxyBalance?) -> WidgetProxySnapshot {
+    guard let proxy else {
+        return WidgetProxySnapshot(
+            status: .unavailable,
+            primaryText: "--",
+            statusText: "读取中",
+            message: "打开 codexU 刷新",
+            walletBalance: nil,
+            todaySpend: nil,
+            weeklyRemaining: nil,
+            weeklyLimit: nil,
+            packageName: nil,
+            packageRemaining: nil,
+            packageLimit: nil,
+            expiresAtText: nil,
+            keyUsageCost: nil,
+            keyRequestCount: nil
+        )
+    }
+
+    let statusText: String
+    switch proxy.status {
+    case .available:
+        statusText = "已连接"
+    case .loggedOut:
+        statusText = "需要登录"
+    case .unavailable:
+        statusText = "读取失败"
+    }
+
+    return WidgetProxySnapshot(
+        status: proxy.status,
+        primaryText: proxy.status == .available ? formatCurrencyCompact(proxy.packageRemaining ?? proxy.walletBalance) : "--",
+        statusText: statusText,
+        message: localizedProxyMessage(proxy.message, language: .zh),
+        walletBalance: proxy.walletBalance,
+        todaySpend: proxy.todaySpend,
+        weeklyRemaining: proxy.weeklyRemaining,
+        weeklyLimit: proxy.weeklyLimit,
+        packageName: proxy.packageName,
+        packageRemaining: proxy.packageRemaining,
+        packageLimit: proxy.packageLimit,
+        expiresAtText: proxy.expiresAtText,
+        keyUsageCost: proxy.keyUsage?.totalCost,
+        keyRequestCount: proxy.keyUsage?.requestCount
+    )
+}
+
 private func dumpJSON(_ snapshot: UsageSnapshot) {
     var object: [String: Any] = [
         "refreshedAt": isoString(snapshot.refreshedAt) ?? "",
@@ -2784,6 +2872,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func openProxyLogin() {
         proxyLoginWindowController.show { [weak self] in
             self?.store.refresh()
+        }
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        window?.moveToFrontLayer()
+        isFrontMode = true
+
+        if urls.contains(where: { $0.host == "login" || $0.path.contains("login") }) {
+            openProxyLogin()
         }
     }
 

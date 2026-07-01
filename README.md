@@ -23,6 +23,7 @@ codexU 是一个 macOS 桌面小组件，用来查看中转站余额、OpenAI Co
 - 从本机 Codex 线程和启用中的 automations 生成今日任务看板。
 - 按进行中、待处理、定时、完成四类组织任务。
 - 默认贴在桌面层，支持 `Command + U` 一键唤到前台。
+- 内置 macOS WidgetKit 系统小组件，可添加到通知中心或桌面，显示中转站余额、周额度和套餐额度进度。
 - 支持中文和英文界面，可根据系统时区自动选择，也可通过顶部 `中 | EN` 手动切换。
 - 本地读取数据，不上传 usage、线程或账户数据到第三方服务。
 
@@ -33,6 +34,7 @@ codexU 是一个 macOS 桌面小组件，用来查看中转站余额、OpenAI Co
 - 顶部 `中 | EN`：切换中文或英文界面，手动选择会在下次启动时保留。
 - 顶部 `中转站 | 官方`：切换中转站余额和官方 Codex 额度，默认使用中转站模式。
 - 中转站模式的登录按钮：打开内置 Krill 登录窗口；登录完成后关闭窗口并刷新。
+- 系统小组件：在 **编辑小组件** 中添加 `codexU`；点击小组件可打开主 App，登录态失效时点小组件里的 `登录` 会打开主 App 的 Krill 登录窗口。
 - 右上角刷新按钮：立即刷新额度、token 统计、趋势图和任务看板。
 - 右上角关闭按钮：退出 codexU。
 - 拖动小组件背景：移动小组件位置。
@@ -51,6 +53,8 @@ codexU 目前通过 GitHub Release 的 DMG 安装包分发，不经过 Mac App S
 codexU 需要读取本机 `~/.codex/` 下的 Codex 数据。如果 macOS 弹出文件或文件夹访问授权，请允许访问，否则小组件无法读取本机 usage、线程和自动化任务信息。
 
 中转站模式使用 codexU 内置的 `WKWebView` 打开 Krill 网页并读取可见余额文字。codexU 不读取 Chrome cookie、浏览器保存的密码，也不会自动填写或提交登录表单。
+
+系统 WidgetKit 小组件只读取主 App 写入本机 `~/Library/Application Support/codexU/widget-snapshot.json` 的快照，不直接运行 WebView、不读取 `~/.codex/`，也不保存登录凭证。首次安装或长时间未打开主 App 时，小组件可能显示“打开 codexU 刷新”。
 
 ## 安装
 
@@ -103,8 +107,8 @@ make release
 产物会写入 `dist/`，例如：
 
 ```text
-dist/codexU-0.1.4-mac-arm64.dmg
-dist/codexU-0.1.4-mac-arm64.dmg.sha256
+dist/codexU-0.1.5-mac-arm64.dmg
+dist/codexU-0.1.5-mac-arm64.dmg.sha256
 ```
 
 Developer ID 签名和 Apple notarization 流程见 [DISTRIBUTION.md](DISTRIBUTION.md)。
@@ -112,6 +116,7 @@ Developer ID 签名和 Apple notarization 流程见 [DISTRIBUTION.md](DISTRIBUTI
 ## 数据来源
 
 - 中转站余额：codexU 内置 `WKWebView` 中已登录的 Krill 网页可见文本。
+- 系统小组件：主 App 写入的本机快照文件。
 - 账户与额度：`codex app-server` 的 `account/read`、`account/rateLimits/read`、`account/usage/read`。
 - 本机 token 用量：`~/.codex/state_5.sqlite`。
 - 今日任务看板：本机 SQLite 中未归档和今日归档的 Codex 线程。

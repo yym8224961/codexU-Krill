@@ -4,42 +4,28 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>zh_CN</string>
-	<key>CFBundleExecutable</key>
-	<string>codexU</string>
 	<key>CFBundleDisplayName</key>
 	<string>codexU</string>
+	<key>CFBundleExecutable</key>
+	<string>CodexUWidget</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.guomeiqing.codexu</string>
-	<key>CFBundleIconFile</key>
-	<string>codexU</string>
+	<string>com.guomeiqing.codexu.widget</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>codexU</string>
+	<string>codexU Widget</string>
 	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>com.guomeiqing.codexu</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>codexu</string>
-			</array>
-		</dict>
-	</array>
-	<key>LSApplicationCategoryType</key>
-	<string>public.app-category.developer-tools</string>
+	<string>XPC!</string>
 	<key>CFBundleShortVersionString</key>
 	<string>0.1.5</string>
 	<key>CFBundleVersion</key>
 	<string>6</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
-	<key>LSUIElement</key>
-	<true/>
-	<key>NSHighResolutionCapable</key>
-	<true/>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.widgetkit-extension</string>
+	</dict>
 </dict>
 </plist>

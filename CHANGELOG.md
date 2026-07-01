@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5
+
+- Added a native macOS WidgetKit widget for proxy balance, weekly quota, package quota, wallet balance, and today's usage.
+- Added a local widget snapshot file written by the main app so the system widget does not run WebView or read Codex state directly.
+- Added `codexu://open` and `codexu://login` deep links for opening the main app and the Krill login window from the widget.
+
 ## 0.1.4
 
 - Added Chinese and English UI text support.

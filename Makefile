@@ -6,9 +6,15 @@ DIST_DIR := dist
 APP_DIR := $(BUILD_DIR)/$(APP_NAME).app
 MACOS_DIR := $(APP_DIR)/Contents/MacOS
 RESOURCES_DIR := $(APP_DIR)/Contents/Resources
+PLUGINS_DIR := $(APP_DIR)/Contents/PlugIns
 SOURCES := $(wildcard Sources/CodexUsageWidget/*.swift)
+WIDGET_EXTENSION_NAME := CodexUWidget.appex
+WIDGET_EXECUTABLE := CodexUWidget
+WIDGET_DIR := $(PLUGINS_DIR)/$(WIDGET_EXTENSION_NAME)
+WIDGET_MACOS_DIR := $(WIDGET_DIR)/Contents/MacOS
+WIDGET_SOURCES := Sources/CodexUsageWidget/ProxyBalance.swift Sources/CodexUsageWidget/WidgetSnapshot.swift $(wildcard Sources/CodexUWidget/*.swift)
 TEST_BUILD_DIR := .test-build
-TEST_SOURCES := Sources/CodexUsageWidget/ProxyBalance.swift Tests/ProxyBalanceParserTests.swift
+TEST_SOURCES := Sources/CodexUsageWidget/ProxyBalance.swift Sources/CodexUsageWidget/WidgetSnapshot.swift Tests/ProxyBalanceParserTests.swift
 APP_ICON := Resources/codexU.icns
 DEPLOYMENT_TARGET ?= 14.0
 HOST_ARCH := $(shell uname -m)
@@ -30,7 +36,7 @@ endif
 
 build:
 	rm -rf "$(APP_DIR)"
-	mkdir -p "$(MACOS_DIR)" "$(RESOURCES_DIR)"
+	mkdir -p "$(MACOS_DIR)" "$(RESOURCES_DIR)" "$(WIDGET_MACOS_DIR)"
 	cp Resources/Info.plist "$(APP_DIR)/Contents/Info.plist"
 	cp "$(APP_ICON)" "$(RESOURCES_DIR)/"
 	MACOSX_DEPLOYMENT_TARGET="$(DEPLOYMENT_TARGET)" swiftc -O -parse-as-library $(SWIFTC_TARGET_FLAGS) $(SOURCES) \
@@ -38,7 +44,14 @@ build:
 		-framework Cocoa \
 		-framework Carbon \
 		-framework SwiftUI \
+		-framework WidgetKit \
 		-framework WebKit
+	cp Resources/CodexUWidget-Info.plist "$(WIDGET_DIR)/Contents/Info.plist"
+	MACOSX_DEPLOYMENT_TARGET="$(DEPLOYMENT_TARGET)" swiftc -O -parse-as-library $(SWIFTC_TARGET_FLAGS) $(WIDGET_SOURCES) \
+		-o "$(WIDGET_MACOS_DIR)/$(WIDGET_EXECUTABLE)" \
+		-framework SwiftUI \
+		-framework WidgetKit
+	codesign $(CODESIGN_FLAGS) "$(WIDGET_DIR)"
 	codesign $(CODESIGN_FLAGS) "$(APP_DIR)"
 	codesign --verify --deep --strict "$(APP_DIR)"
 
