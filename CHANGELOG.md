@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.6
+
+- Fixed WidgetKit registration by preserving the widget extension sandbox entitlement during signing.
+- Added a read-only sandbox exception so the system widget can read the main app's local snapshot.
+
 ## 0.1.5
 
 - Added a native macOS WidgetKit widget for proxy balance, weekly quota, package quota, wallet balance, and today's usage.

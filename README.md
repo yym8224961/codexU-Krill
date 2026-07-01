@@ -25,7 +25,7 @@ codexU-Krill 是一个为个人使用场景定制的 macOS Codex 额度小组件
 
 安装步骤：
 
-1. 打开 `codexU-0.1.5-mac-arm64.dmg`。
+1. 打开 `codexU-0.1.6-mac-arm64.dmg`。
 2. 将 `codexU.app` 拖到 `Applications`。
 3. 从 `Applications` 打开 codexU。
 4. 如果 macOS 拦截，进入 **系统设置 > 隐私与安全性**，点击 **仍要打开**。
@@ -96,8 +96,8 @@ make release
 产物示例：
 
 ```text
-dist/codexU-0.1.5-mac-arm64.dmg
-dist/codexU-0.1.5-mac-arm64.dmg.sha256
+dist/codexU-0.1.6-mac-arm64.dmg
+dist/codexU-0.1.6-mac-arm64.dmg.sha256
 ```
 
 ## 常见问题
@@ -105,6 +105,10 @@ dist/codexU-0.1.5-mac-arm64.dmg.sha256
 ### 为什么系统小组件显示“打开 codexU 刷新”？
 
 WidgetKit 小组件不直接打开网页，也不直接读取 Codex 数据。先启动一次主 App，让它刷新并写入本机快照，小组件就会显示最新数据。
+
+### 系统小组件列表里找不到 codexU 怎么办？
+
+请确认安装的是 `0.1.6` 或更新版本，然后从 `/Applications` 打开一次 codexU。`0.1.5` 的打包签名会丢失 Widget 扩展的 sandbox 权限，macOS 不会把它注册到系统小组件列表。
 
 ### 为什么要用内置 Krill 登录窗口？
 

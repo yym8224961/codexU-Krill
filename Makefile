@@ -13,6 +13,7 @@ WIDGET_EXECUTABLE := CodexUWidget
 WIDGET_DIR := $(PLUGINS_DIR)/$(WIDGET_EXTENSION_NAME)
 WIDGET_MACOS_DIR := $(WIDGET_DIR)/Contents/MacOS
 WIDGET_SOURCES := Sources/CodexUsageWidget/ProxyBalance.swift Sources/CodexUsageWidget/WidgetSnapshot.swift $(wildcard Sources/CodexUWidget/*.swift)
+WIDGET_ENTITLEMENTS := Resources/CodexUWidget.entitlements
 TEST_BUILD_DIR := .test-build
 TEST_SOURCES := Sources/CodexUsageWidget/ProxyBalance.swift Sources/CodexUsageWidget/WidgetSnapshot.swift Tests/ProxyBalanceParserTests.swift
 APP_ICON := Resources/codexU.icns
@@ -27,9 +28,11 @@ CODESIGN_EXTRA_FLAGS ?=
 SWIFTC_TARGET_FLAGS := -target $(TARGET_TRIPLE)
 
 ifeq ($(SIGN_IDENTITY),-)
-CODESIGN_FLAGS := --force --deep --sign -
+APP_CODESIGN_FLAGS := --force --sign -
+WIDGET_CODESIGN_FLAGS := --force --sign - --entitlements "$(WIDGET_ENTITLEMENTS)"
 else
-CODESIGN_FLAGS := --force --deep --options runtime --timestamp --sign "$(SIGN_IDENTITY)" $(CODESIGN_EXTRA_FLAGS)
+APP_CODESIGN_FLAGS := --force --options runtime --timestamp --sign "$(SIGN_IDENTITY)" $(CODESIGN_EXTRA_FLAGS)
+WIDGET_CODESIGN_FLAGS := --force --options runtime --timestamp --sign "$(SIGN_IDENTITY)" --entitlements "$(WIDGET_ENTITLEMENTS)" $(CODESIGN_EXTRA_FLAGS)
 endif
 
 .PHONY: build run probe install dmg checksum release notarize verify test clean clean-dist
@@ -51,8 +54,8 @@ build:
 		-o "$(WIDGET_MACOS_DIR)/$(WIDGET_EXECUTABLE)" \
 		-framework SwiftUI \
 		-framework WidgetKit
-	codesign $(CODESIGN_FLAGS) "$(WIDGET_DIR)"
-	codesign $(CODESIGN_FLAGS) "$(APP_DIR)"
+	codesign $(WIDGET_CODESIGN_FLAGS) "$(WIDGET_DIR)"
+	codesign $(APP_CODESIGN_FLAGS) "$(APP_DIR)"
 	codesign --verify --deep --strict "$(APP_DIR)"
 
 test:

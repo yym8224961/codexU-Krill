@@ -23,7 +23,7 @@ Download the Apple Silicon build from Releases:
 
 Steps:
 
-1. Open `codexU-0.1.5-mac-arm64.dmg`.
+1. Open `codexU-0.1.6-mac-arm64.dmg`.
 2. Drag `codexU.app` into `Applications`.
 3. Open codexU from `Applications`.
 4. If macOS blocks the app, go to **System Settings > Privacy & Security** and click **Open Anyway**.
@@ -94,8 +94,8 @@ make release
 Example artifacts:
 
 ```text
-dist/codexU-0.1.5-mac-arm64.dmg
-dist/codexU-0.1.5-mac-arm64.dmg.sha256
+dist/codexU-0.1.6-mac-arm64.dmg
+dist/codexU-0.1.6-mac-arm64.dmg.sha256
 ```
 
 ## FAQ
@@ -103,6 +103,10 @@ dist/codexU-0.1.5-mac-arm64.dmg.sha256
 ### Why does the system widget say "Open codexU to refresh"?
 
 The WidgetKit widget does not run WebView or read Codex data directly. Open the main app once so it can refresh and write the local widget snapshot.
+
+### Why can't I find codexU in the system widget gallery?
+
+Make sure you installed `0.1.6` or later, then open codexU once from `/Applications`. Version `0.1.5` lost the Widget extension sandbox entitlement during packaging, so macOS did not register it in the widget gallery.
 
 ### Why use an in-app Krill login window?
 
