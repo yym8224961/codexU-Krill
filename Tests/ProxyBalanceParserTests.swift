@@ -55,6 +55,13 @@ struct ProxyBalanceParserTestRunner {
         BalanceSourceMode.official.persist(defaults: defaults)
         assertEqual(BalanceSourceMode.storedOrDefault(defaults: defaults), .official, "stored source mode")
 
+        let progress = ProxyQuotaProgress(remaining: 541.5, limit: 600)
+        assertClose(progress?.availableFraction, 0.9025, "quota progress fraction")
+        let overLimitProgress = ProxyQuotaProgress(remaining: 720, limit: 600)
+        assertClose(overLimitProgress?.availableFraction, 1.0, "quota progress clamps high values")
+        let invalidProgress = ProxyQuotaProgress(remaining: 10, limit: 0)
+        assertEqual(invalidProgress == nil, true, "quota progress rejects invalid limit")
+
         print("ProxyBalanceParserTests passed")
     }
 

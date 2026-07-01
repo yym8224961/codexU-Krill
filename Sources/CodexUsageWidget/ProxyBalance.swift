@@ -30,6 +30,21 @@ struct ProxyKeyUsage: Equatable {
     let tokenCount: Int64?
 }
 
+struct ProxyQuotaProgress: Equatable {
+    let remaining: Double
+    let limit: Double
+
+    init?(remaining: Double?, limit: Double?) {
+        guard let remaining, let limit, limit > 0 else { return nil }
+        self.remaining = remaining
+        self.limit = limit
+    }
+
+    var availableFraction: Double {
+        max(0, min(1, remaining / limit))
+    }
+}
+
 struct ProxyBalance: Equatable {
     let status: ProxyBalanceStatus
     let sourceURL: String?
